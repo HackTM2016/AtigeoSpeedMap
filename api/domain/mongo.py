@@ -1,9 +1,12 @@
+import numpy as np
 from pymongo import MongoClient
+from geopy.geocoders import Nominatim
 
 MONGO_HOST = "52.53.195.124"
 DB = "hacktm"
 client = MongoClient(host=MONGO_HOST)
 db = client.get_database(DB)
+geolocator = Nominatim()
 
 FIELDS = {
     'latitude': 1,
@@ -72,8 +75,8 @@ def get_points_with_weight(collection, count=None, from_speed=None, start_ts=Non
     return points_with_weight
 
 
-def get_speed_stats():
-    collection = db.get_collection("demo")
+def get_speed_stats(collection):
+    collection = db.get_collection(collection)
     data = collection.find({}, {"speedkmh": 1, "_id": 0})
 
     total_speed = 0.0
@@ -98,4 +101,22 @@ def get_speed_stats():
     illegal_avg = total_illegal_speed / illegal_cnt
 
     return {'main_avg': main_avg, 'legal_avg': legal_avg, 'illegal_avg': illegal_avg}
+
+
+def get_dangerous_streets(collection):
+    collection = db.get_collection(collection)
+    fields = {"latitude": 1, "longitude": 1, "_id": 0}
+    dangerous = list(collection.find({"speedkmh": {"$gte": 65.0}}, fields).limit(120))
+    unique_points = list(np.unique(np.array(dangerous)))
+    addresses = []
+    for point in unique_points:
+        location = geolocator.reverse(str(point['latitude']) + ", " + str(point['longitude']))
+        addresses.append(location.address)
+
+    return set(addresses)
+
+
+def get_illegalities_count(collection):
+    collection = db.get_collection(collection)
+    return collection.find({"speedkmh": {"$gte": 50.0}}).count()
 
