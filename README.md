@@ -6,4 +6,6 @@ Web analytics interface for navigational data captured and parsed from cars runn
 
 Creating a heatmap with the Google Maps API, providing an overview of how speedy the traffic is in different parts of the city.
 
+#### Original development repository
 
+https://github.com/saibot94/atigeo-speedmap
